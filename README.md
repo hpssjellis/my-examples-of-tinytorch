@@ -1,2 +1,8 @@
 # my-examples-of-tinytorch
 Just trying to get tinytorch working
+
+
+
+[mlsysbook.ai](https://harvard-edge.github.io/cs249r_book/)
+
+[TinyTorch](https://tinytorch.ai/quickstart-guide.html)
