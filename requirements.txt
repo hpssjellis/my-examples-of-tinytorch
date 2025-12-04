@@ -1,8 +1,6 @@
 flask
 gunicorn
 numpy
-tinytorch
+torch
+tito
 matplotlib
-scikit-learn
-pillow
-tqdm
