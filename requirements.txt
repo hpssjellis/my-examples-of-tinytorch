@@ -1,6 +1,7 @@
 flask
 gunicorn
 numpy
+tinytorch
 matplotlib
 scikit-learn
 pillow
