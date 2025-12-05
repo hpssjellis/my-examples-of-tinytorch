@@ -5,6 +5,7 @@ FROM php:8.2-apache
 ENV PYTHONUNBUFFERED=1
 ENV TITO_ROOT=/TinyTorch
 ENV PATH="${PATH}:/root/.local/bin"
+ENV DEBIAN_FRONTEND=noninteractive
 
 # ----------------------------------------------------
 # 1. Install System Dependencies (Python, Node.js, Git, Build Tools)
@@ -13,12 +14,14 @@ RUN apt-get update && \
     apt-get install -y \
         python3 \
         python3-pip \
+        python3-dev \
         python3-venv \
         curl \
         gnupg \
         ca-certificates \
         git \
         build-essential \
+        wget \
     --no-install-recommends && \
     # Create symbolic link for 'python' command compatibility
     ln -s /usr/bin/python3 /usr/bin/python && \
@@ -37,9 +40,12 @@ RUN mkdir -p /etc/apt/keyrings && \
     rm -rf /var/lib/apt/lists/*
 
 # ----------------------------------------------------
-# 3. Upgrade pip
+# 3. Upgrade pip using get-pip.py (more reliable method)
 # ----------------------------------------------------
-RUN python3 -m pip install --no-cache-dir --upgrade pip
+RUN wget https://bootstrap.pypa.io/get-pip.py && \
+    python3 get-pip.py && \
+    rm get-pip.py && \
+    pip --version
 
 # ----------------------------------------------------
 # 4. Clone and Install TinyTorch
@@ -48,17 +54,16 @@ RUN git clone https://github.com/mlsysbook/TinyTorch.git $TITO_ROOT
 
 WORKDIR $TITO_ROOT
 
-# Install TinyTorch dependencies
-RUN pip install --no-cache-dir \
-    numpy \
-    jupyter \
-    jupyterlab \
-    rich \
-    torch \
-    pyyaml \
-    pytest \
-    jupytext \
-    nbgrader
+# Install TinyTorch dependencies one by one for better error tracking
+RUN pip install --no-cache-dir numpy && \
+    pip install --no-cache-dir jupyter && \
+    pip install --no-cache-dir jupyterlab && \
+    pip install --no-cache-dir rich && \
+    pip install --no-cache-dir torch && \
+    pip install --no-cache-dir pyyaml && \
+    pip install --no-cache-dir pytest && \
+    pip install --no-cache-dir jupytext && \
+    pip install --no-cache-dir nbgrader
 
 # Install TinyTorch in editable mode (enables 'tito' CLI)
 RUN pip install -e .
@@ -71,3 +76,29 @@ WORKDIR /var/www/html
 
 # Copy your PHP application code
 COPY . /var/www/html/
+
+# Set proper permissions for Apache
+RUN chown -R www-data:www-data /var/www/html
+
+# ----------------------------------------------------
+# 6. Expose Ports
+# ----------------------------------------------------
+# Port 80 for Apache/PHP
+EXPOSE 80
+# Port 8888 for Jupyter (if you want to run notebooks)
+EXPOSE 8888
+
+# ----------------------------------------------------
+# 7. Startup Configuration
+# ----------------------------------------------------
+# Create a startup script to run both Apache and optionally Jupyter
+RUN echo '#!/bin/bash\n\
+# Start Apache in the background\n\
+apache2-foreground &\n\
+# Optionally start Jupyter Lab (uncomment if needed)\n\
+# jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --notebook-dir=/var/www/html &\n\
+# Keep container running\n\
+wait' > /start.sh && chmod +x /start.sh
+
+# Default command runs Apache (and optionally Jupyter)
+CMD ["/start.sh"]
