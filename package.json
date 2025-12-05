@@ -1,0 +1,32 @@
+
+{
+  "name": "php-tinytorch-app",
+  "version": "1.0.0",
+  "description": "A PHP application with TinyTorch integration for machine learning notebooks and web development.",
+  "main": "index.php",
+  "scripts": {
+    "start": "php -S 0.0.0.0:${PORT:-8080} -t .",
+    "start:apache": "apache2-foreground",
+    "start:jupyter": "jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --notebook-dir=.",
+    "dev": "php -S localhost:8080 -t .",
+    "test:python": "pytest",
+    "tito": "tito"
+  },
+  "keywords": [
+    "php",
+    "python",
+    "tinytorch",
+    "machine-learning",
+    "jupyter",
+    "render",
+    "deep-learning"
+  ],
+  "engines": {
+    "node": ">=20.x",
+    "npm": ">=10.x"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {},
+  "devDependencies": {}
+}
