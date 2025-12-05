@@ -32,6 +32,10 @@ This might work   https://my-examples-of-tinytorch-2.onrender.com
 
 
 
+pyTorch not installing well.
+```
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+```
 
 
 # tito
