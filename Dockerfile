@@ -8,7 +8,7 @@ ENV PATH="${PATH}:/root/.local/bin"
 ENV DEBIAN_FRONTEND=noninteractive
 
 # ----------------------------------------------------
-# 1. Install System Dependencies (Python, Node.js, Git, Build Tools)
+# 1. Install System Dependencies and Upgrade pip in one step
 # ----------------------------------------------------
 RUN apt-get update && \
     apt-get install -y \
@@ -25,6 +25,11 @@ RUN apt-get update && \
     --no-install-recommends && \
     # Create symbolic link for 'python' command compatibility
     ln -s /usr/bin/python3 /usr/bin/python && \
+    # Upgrade pip using get-pip.py (more reliable than apt's pip)
+    wget https://bootstrap.pypa.io/get-pip.py && \
+    python3 get-pip.py && \
+    rm get-pip.py && \
+    pip --version && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -40,15 +45,7 @@ RUN mkdir -p /etc/apt/keyrings && \
     rm -rf /var/lib/apt/lists/*
 
 # ----------------------------------------------------
-# 3. Upgrade pip using get-pip.py (more reliable method)
-# ----------------------------------------------------
-RUN wget https://bootstrap.pypa.io/get-pip.py && \
-    python3 get-pip.py && \
-    rm get-pip.py && \
-    pip --version
-
-# ----------------------------------------------------
-# 4. Clone and Install TinyTorch
+# 3. Clone and Install TinyTorch
 # ----------------------------------------------------
 RUN git clone https://github.com/mlsysbook/TinyTorch.git $TITO_ROOT
 
@@ -69,7 +66,7 @@ RUN pip install --no-cache-dir numpy && \
 RUN pip install -e .
 
 # ----------------------------------------------------
-# 5. Setup PHP Application
+# 4. Setup PHP Application
 # ----------------------------------------------------
 # Return to root for PHP application setup
 WORKDIR /var/www/html
@@ -81,7 +78,7 @@ COPY . /var/www/html/
 RUN chown -R www-data:www-data /var/www/html
 
 # ----------------------------------------------------
-# 6. Expose Ports
+# 5. Expose Ports
 # ----------------------------------------------------
 # Port 80 for Apache/PHP
 EXPOSE 80
@@ -89,7 +86,7 @@ EXPOSE 80
 EXPOSE 8888
 
 # ----------------------------------------------------
-# 7. Startup Configuration
+# 6. Startup Configuration
 # ----------------------------------------------------
 # Create a startup script to run both Apache and optionally Jupyter
 RUN echo '#!/bin/bash\n\
