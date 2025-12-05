@@ -9,4 +9,7 @@ Just trying to get tinytorch working
 
 
 
-This render.com link should be at https://my-examples-of-tinytorch-1.onrender.com/
+This render.com link should be at https://my-examples-of-tinytorch-1.onrender.com/   that one was bad
+
+
+This might work   https://my-examples-of-tinytorch-2.onrender.com
