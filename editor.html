@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TinyTorch Notebook Editor</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 { font-size: 1.8em; }
+        .toolbar {
+            background: #f8f9fa;
+            padding: 15px 30px;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .toolbar select, .toolbar input {
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+        }
+        button.secondary {
+            background: #6c757d;
+        }
+        button.success {
+            background: #28a745;
+        }
+        button.danger {
+            background: #dc3545;
+        }
+        .notebook-area {
+            padding: 30px;
+        }
+        .cell {
+            margin-bottom: 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: border-color 0.3s;
+        }
+        .cell:hover {
+            border-color: #667eea;
+        }
+        .cell-header {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .cell-type {
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9em;
+        }
+        .cell-actions button {
+            padding: 4px 10px;
+            font-size: 0.85em;
+            margin-left: 5px;
+        }
+        .cell-content {
+            padding: 0;
+        }
+        textarea {
+            width: 100%;
+            border: none;
+            padding: 15px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 100px;
+            background: #282c34;
+            color: #abb2bf;
+        }
+        .cell-output {
+            padding: 15px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            font-family: monospace;
+            white-space: pre-wrap;
+            display: none;
+        }
+        .cell-output.show {
+            display: block;
+        }
+        .status-bar {
+            background: #f8f9fa;
+            padding: 10px 30px;
+            border-top: 1px solid #dee2e6;
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+        .loading {
+            display: none;
+            color: #667eea;
+            font-style: italic;
+        }
+        .loading.show {
+            display: inline;
+        }
+        .info-box {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📓 TinyTorch Notebook Editor</h1>
+            <div id="connection-status">🟢 Connected</div>
+        </div>
+
+        <div class="toolbar">
+            <select id="module-select">
+                <option value="">Select Module...</option>
+                <option value="01_tensor">01 - Tensor Basics</option>
+                <option value="02_autograd">02 - Autograd</option>
+                <option value="03_nn">03 - Neural Networks</option>
+            </select>
+            <button onclick="loadModule()">📂 Load Module</button>
+            <button onclick="saveNotebook()" class="success">💾 Save Notebook</button>
+            <button onclick="executeAll()" class="secondary">▶️ Run All Cells</button>
+            <button onclick="addCell('code')">➕ Add Code Cell</button>
+            <button onclick="addCell('markdown')">➕ Add Markdown Cell</button>
+            <button onclick="runTitoGrade()" class="danger">✅ Grade with tito</button>
+            <span class="loading" id="main-loading">Working...</span>
+        </div>
+
+        <div class="notebook-area" id="notebook-area">
+            <div class="info-box">
+                <strong>💡 Quick Start:</strong>
+                <ol style="margin: 10px 0 0 20px; line-height: 1.8;">
+                    <li>Select a module from the dropdown above</li>
+                    <li>Click "Load Module" to convert .py → .ipynb and load it</li>
+                    <li>Edit cells directly in the editor</li>
+                    <li>Click "Save Notebook" to persist changes</li>
+                    <li>Click "Grade with tito" to run tito grading commands</li>
+                </ol>
+            </div>
+            <div id="cells-container"></div>
+        </div>
+
+        <div class="status-bar">
+            <span id="status-message">Ready. Configure API_BASE_URL in the script below.</span>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURE THIS: Your Render service URL
+        const API_BASE_URL = 'https://your-service.onrender.com';
+        
+        let currentNotebook = null;
+        let cells = [];
+
+        function setStatus(message, isLoading = false) {
+            document.getElementById('status-message').textContent = message;
+            const loading = document.getElementById('main-loading');
+            if (isLoading) {
+                loading.classList.add('show');
+            } else {
+                loading.classList.remove('show');
+            }
+        }
+
+        async function apiCall(endpoint, options = {}) {
+            try {
+                const response = await fetch(API_BASE_URL + endpoint, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    }
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('API call failed:', error);
+                setStatus('❌ API call failed: ' + error.message);
+                return { status: 'error', message: error.message };
+            }
+        }
+
+        async function loadModule() {
+            const moduleSelect = document.getElementById('module-select');
+            const moduleName = moduleSelect.value;
+            
+            if (!moduleName) {
+                alert('Please select a module');
+                return;
+            }
+
+            setStatus('Converting .py to .ipynb...', true);
+
+            // Step 1: Convert .py to .ipynb
+            const convertResult = await apiCall('/api/v1/notebook/convert', {
+                method: 'POST',
+                body: JSON.stringify({
+                    source_file: `${moduleName}.py`,
+                    target_file: `${moduleName}.ipynb`
+                })
+            });
+
+            if (convertResult.status === 'error') {
+                setStatus('❌ Conversion failed: ' + convertResult.message);
+                return;
+            }
+
+            // Step 2: Read the notebook
+            setStatus('Loading notebook...', true);
+            const readResult = await apiCall(`/api/v1/notebook/read/${moduleName}.ipynb`);
+
+            if (readResult.status === 'error') {
+                setStatus('❌ Load failed: ' + readResult.message);
+                return;
+            }
+
+            currentNotebook = moduleName;
+            cells = readResult.cells || [];
+            renderCells();
+            setStatus(`✅ Loaded ${moduleName}.ipynb (${cells.length} cells)`);
+        }
+
+        function renderCells() {
+            const container = document.getElementById('cells-container');
+            container.innerHTML = '';
+
+            cells.forEach((cell, index) => {
+                const cellDiv = document.createElement('div');
+                cellDiv.className = 'cell';
+                cellDiv.innerHTML = `
+                    <div class="cell-header">
+                        <span class="cell-type">${cell.type === 'code' ? '🐍 Code' : '📝 Markdown'} Cell ${index + 1}</span>
+                        <div class="cell-actions">
+                            <button onclick="runCell(${index})" class="secondary">▶️ Run</button>
+                            <button onclick="deleteCell(${index})" class="danger">🗑️ Delete</button>
+                        </div>
+                    </div>
+                    <div class="cell-content">
+                        <textarea id="cell-${index}" rows="5">${cell.source || ''}</textarea>
+                    </div>
+                    <div class="cell-output" id="output-${index}"></div>
+                `;
+                container.appendChild(cellDiv);
+            });
+        }
+
+        function addCell(type) {
+            cells.push({ type: type, source: '' });
+            renderCells();
+            setStatus(`Added ${type} cell`);
+        }
+
+        function deleteCell(index) {
+            if (confirm('Delete this cell?')) {
+                cells.splice(index, 1);
+                renderCells();
+                setStatus('Cell deleted');
+            }
+        }
+
+        async function runCell(index) {
+            const cell = cells[index];
+            const textarea = document.getElementById(`cell-${index}`);
+            const output = document.getElementById(`output-${index}`);
+            
+            // Update cell content
+            cell.source = textarea.value;
+            
+            if (cell.type === 'code') {
+                output.textContent = '⏳ Executing...';
+                output.classList.add('show');
+                
+                // For now, just show the code would be executed
+                // In a real implementation, you'd execute via API
+                setTimeout(() => {
+                    output.textContent = '✅ Code cell executed (execution API not yet implemented)';
+                }, 500);
+            } else {
+                output.textContent = '📝 Markdown cell (no execution needed)';
+                output.classList.add('show');
+            }
+        }
+
+        async function executeAll() {
+            setStatus('Executing all cells...', true);
+            
+            // Update all cell sources first
+            cells.forEach((cell, index) => {
+                const textarea = document.getElementById(`cell-${index}`);
+                if (textarea) {
+                    cell.source = textarea.value;
+                }
+            });
+
+            // Save first
+            await saveNotebook();
+
+            // Then execute
+            const result = await apiCall('/api/v1/notebook/execute', {
+                method: 'POST',
+                body: JSON.stringify({
+                    filename: `${currentNotebook}.ipynb`
+                })
+            });
+
+            if (result.status === 'success') {
+                setStatus('✅ All cells executed successfully');
+                // Reload to see outputs
+                setTimeout(() => loadModule(), 1000);
+            } else {
+                setStatus('❌ Execution failed: ' + result.message);
+            }
+        }
+
+        async function saveNotebook() {
+            if (!currentNotebook) {
+                alert('No notebook loaded');
+                return;
+            }
+
+            setStatus('Saving notebook...', true);
+
+            // Collect all cell content
+            cells.forEach((cell, index) => {
+                const textarea = document.getElementById(`cell-${index}`);
+                if (textarea) {
+                    cell.source = textarea.value;
+                }
+            });
+
+            const result = await apiCall('/api/v1/notebook/update', {
+                method: 'POST',
+                body: JSON.stringify({
+                    filename: `${currentNotebook}.ipynb`,
+                    cells: cells
+                })
+            });
+
+            if (result.status === 'success') {
+                setStatus('✅ Notebook saved');
+            } else {
+                setStatus('❌ Save failed: ' + result.message);
+            }
+        }
+
+        async function runTitoGrade() {
+            if (!currentNotebook) {
+                alert('No notebook loaded');
+                return;
+            }
+
+            if (!confirm('Save notebook and run tito grading?')) {
+                return;
+            }
+
+            setStatus('Saving and grading...', true);
+
+            // Step 1: Save notebook
+            await saveNotebook();
+
+            // Step 2: Convert back to .py
+            const convertResult = await apiCall('/api/v1/notebook/save-as-py', {
+                method: 'POST',
+                body: JSON.stringify({
+                    notebook: `${currentNotebook}.ipynb`,
+                    py_file: `${currentNotebook}.py`
+                })
+            });
+
+            if (convertResult.status === 'error') {
+                setStatus('❌ Conversion to .py failed: ' + convertResult.message);
+                return;
+            }
+
+            // Step 3: Run tito grade
+            const gradeResult = await apiCall('/api/v1/tito/command', {
+                method: 'POST',
+                body: JSON.stringify({
+                    args: ['grade', 'autograde', currentNotebook],
+                    cwd: '/app/workspace/assignments'
+                })
+            });
+
+            if (gradeResult.status === 'success') {
+                setStatus('✅ Grading complete!');
+                alert('Grading Results:\n\n' + gradeResult.output);
+            } else {
+                setStatus('❌ Grading failed: ' + gradeResult.message);
+                alert('Grading failed:\n\n' + gradeResult.message);
+            }
+        }
+
+        // Check API connection on load
+        window.addEventListener('load', async () => {
+            const health = await apiCall('/api/v1/health');
+            if (health.status === 'healthy') {
+                setStatus('✅ Connected to API');
+                document.getElementById('connection-status').textContent = '🟢 Connected';
+            } else {
+                setStatus('❌ API connection failed');
+                document.getElementById('connection-status').textContent = '🔴 Disconnected';
+            }
+        });
+    </script>
+</body>
+</html>
