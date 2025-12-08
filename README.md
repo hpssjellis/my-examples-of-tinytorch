@@ -8,6 +8,9 @@ Just trying to get tinytorch working
 [TinyTorch](https://tinytorch.ai/quickstart-guide.html)
 
 
+TinyTorch Github at https://github.com/mlsysbook/TinyTorch
+
+
 
 This render.com link should be at https://my-examples-of-tinytorch-1.onrender.com/   that one was bad
 
