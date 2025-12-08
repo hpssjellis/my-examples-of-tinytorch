@@ -19,6 +19,22 @@ This render.com link should be at
 
 
 
+  Other githubs connected to this project
+
+
+  [Github my-examples-of-tito](https://github.com/hpssjellis/my-examples-of-tito)   [Active Render Link](https://my-examples-of-tito.onrender.com/)
+
+
+  
+
+  [Github my-example-jupyter-tinyTorch](https://github.com/hpssjellis/my-example-jupyter-tinyTorch) [Active Render.com ](https://my-example-jupyter-tinytorch.onrender.com/)
+  
+
+
+  
+
+
+
 
 
 
