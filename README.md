@@ -12,10 +12,10 @@ TinyTorch Github at https://github.com/mlsysbook/TinyTorch
 
 
 
-This render.com link should be at https://my-examples-of-tinytorch-1.onrender.com/   that one was bad
+This render.com link should be at 
 
 
-This might work   https://my-examples-of-tinytorch-2.onrender.com
+  https://my-examples-of-tinytorch-2.onrender.com
 
 
 
