@@ -29,7 +29,7 @@ This render.com link should be at
   Supper useful command
 
 ```
-tito export --all
+tito src export --all
 
 ```
 
