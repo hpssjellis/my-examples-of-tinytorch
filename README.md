@@ -18,6 +18,22 @@ This render.com link should be at
   https://my-examples-of-tinytorch-2.onrender.com
 
 
+  .
+
+
+
+  .
+
+
+
+  Supper useful command
+
+```
+tito export --all
+
+```
+
+I have been having difficulties with the .ipyn notebooks not being generated
 
   Other githubs connected to this project
 
