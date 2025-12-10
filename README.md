@@ -22,6 +22,65 @@ This render.com link should be at
 
 
 
+## Possible requirements.txt with specific installs
+
+Note also has the optional files
+
+
+```
+# TinyTorch Course Dependencies
+# Compatible with Python 3.8-3.13
+
+# ============================================================================
+# Core Dependencies (Required)
+# ============================================================================
+
+# Numerical computing - TinyTorch core requirement
+numpy==2.3.5
+
+# Terminal UI - Used by tito CLI and milestone examples
+rich==14.2.0
+
+# Configuration files - Used by tito CLI
+PyYAML==6.0.3
+
+# ============================================================================
+# Testing (Required for development)
+# ============================================================================
+
+pytest==9.0.2
+pytest-cov==7.0.0
+
+# ============================================================================
+# Development Tools (Required for tito export)
+# ============================================================================
+
+# Jupytext - Convert .py files to .ipynb for nbdev
+jupytext==1.18.1
+nbformat==5.10.4
+
+# ============================================================================
+# Optional Dependencies (Uncomment if needed)
+# ============================================================================
+
+# Visualization for milestone examples and benchmarking (Modules 17, 19, 20)
+matplotlib-inline==0.2.1
+
+# Jupyter for interactive development
+jupyter==1.1.1
+jupyterlab==4.5.0
+ipykernel==7.1.0
+
+# Code quality tools
+# black>=24.0.0
+# mypy>=1.11.0
+# ruff>=0.6.0
+
+# Type hints for older Python versions
+# typing-extensions>=4.12.0 
+
+```
+
   .
 
 
