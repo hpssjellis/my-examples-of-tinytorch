@@ -21,6 +21,18 @@ This render.com link should be at
   .
 
 
+list notebooks 
+```
+jupyter server list
+
+```
+
+Stop
+
+```
+jupyter lab stop 8888
+```
+
 
 ## Possible requirements.txt with specific installs
 
