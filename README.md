@@ -34,6 +34,13 @@ jupyter lab stop 8888
 ```
 
 
+stop all
+
+```
+pkill -f jupyter
+```
+
+
 ## Possible requirements.txt with specific installs
 
 Note also has the optional files
