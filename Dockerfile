@@ -1,92 +1,46 @@
-# Use an official PHP image with the Apache web server
-FROM php:8.2-apache
+# Start with a standard Python base image
+FROM python:3.9-slim
 
 # Set environment variables
-ENV PYTHONUNBUFFERED=1
-ENV TITO_ROOT=/TinyTorch
-ENV PATH="${PATH}:/root/.local/bin"
-ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED 1
+ENV TITO_ROOT /TinyTorch
 
-# ----------------------------------------------------
-# 1. Install System Dependencies
-# ----------------------------------------------------
-RUN apt-get update && \
-    apt-get install -y \
-        python3 \
-        python3-pip \
-        python3-dev \
-        python3-venv \
-        curl \
-        gnupg \
-        ca-certificates \
-        git \
-        build-essential \
-    --no-install-recommends && \
-    ln -s /usr/bin/python3 /usr/bin/python && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+# Install core build dependencies (like git for cloning)
+RUN apt-get update && apt-get install -y \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
-# ----------------------------------------------------
-# 2. Install Node.js
-# ----------------------------------------------------
-RUN mkdir -p /etc/apt/keyrings && \
-    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
-    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list > /dev/null && \
-    apt-get update && \
-    apt-get install -y nodejs --no-install-recommends && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+# Set the working directory
+WORKDIR /app
 
-# ----------------------------------------------------
-# 3. Clone TinyTorch
-# ----------------------------------------------------
+# 1. Clone the TinyTorch repository
 RUN git clone https://github.com/mlsysbook/TinyTorch.git $TITO_ROOT
 
+# Navigate into the project directory
 WORKDIR $TITO_ROOT
 
-# ----------------------------------------------------
-# 4. Install Python packages
-# ----------------------------------------------------
-# Set pip configuration to suppress root warning in Docker
-ENV PIP_ROOT_USER_ACTION=ignore
+# 2. Upgrade pip (standard practice)
+RUN python -m pip install --no-cache-dir --upgrade pip
 
-# Install packages with --break-system-packages flag for Debian 12+
-RUN python3 -m pip install --break-system-packages --no-cache-dir \
-    numpy \
-    jupyter \
-    jupyterlab \
-    rich \
-    torch \
-    pyyaml \
+# 3. Install Explicit Core Dependencies
+# The automated setup installs NumPy, Jupyter, Rich, PyTorch for validation, PyYAML, pytest, and jupytext [1, 2].
+# We install these individually based on the components mentioned:
+RUN pip install --no-cache-dir \
+    NumPy \
+    Jupyter \
+    Rich \
+    PyTorch \
+    PyYAML \
     pytest \
-    jupytext \
-    nbgrader
+    jupytext
 
-# Install TinyTorch in editable mode
-RUN python3 -m pip install --break-system-packages -e .
+# 4. Install NBGrader (Required for full course/instructor functionality)
+# NBGrader is installed separately in the manual setup [3].
+RUN pip install --no-cache-dir nbgrader
 
-# ----------------------------------------------------
-# 5. Setup PHP Application
-# ----------------------------------------------------
-WORKDIR /var/www/html
+# 5. Configure TinyTorch in Development (Editable) Mode
+# This is crucial for enabling the 'tito' CLI and linking notebooks to the package [1, 2].
+RUN pip install -e .
 
-# Copy your PHP application code
-COPY . /var/www/html/
-
-# Set proper permissions for Apache
-RUN chown -R www-data:www-data /var/www/html
-
-# ----------------------------------------------------
-# 6. Expose Ports
-# ----------------------------------------------------
-EXPOSE 80
-EXPOSE 8888
-
-# ----------------------------------------------------
-# 7. Startup Script
-# ----------------------------------------------------
-RUN echo '#!/bin/bash\n\
-apache2-foreground &\n\
-wait' > /start.sh && chmod +x /start.sh
-
-CMD ["/start.sh"]
+# Set the entrypoint to keep the container running
+CMD ["bash"]
