@@ -2,45 +2,53 @@
 FROM python:3.9-slim
 
 # Set environment variables
-ENV PYTHONUNBUFFERED 1
-ENV TITO_ROOT /TinyTorch
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    TITO_ROOT=/app/tinytorch
 
-# Install core build dependencies (like git for cloning)
-RUN apt-get update && apt-get install -y \
+# Install core build dependencies
+# We need git to clone and procps for some Jupyter/Tito background tasks
+RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
+    procps \
     && rm -rf /var/lib/apt/lists/*
 
 # Set the working directory
 WORKDIR /app
 
-# 1. Clone the TinyTorch repository
-RUN git clone https://github.com/mlsysbook/TinyTorch.git $TITO_ROOT
+# 1. Clone the repository
+# TinyTorch is part of the cs249r_book repo
+RUN git clone --depth 1 https://github.com/harvard-edge/cs249r_book.git .
 
-# Navigate into the project directory
+# 2. Navigate into the TinyTorch component
 WORKDIR $TITO_ROOT
 
-# 2. Upgrade pip (standard practice)
-RUN python -m pip install --no-cache-dir --upgrade pip
-
-# 3. Install Explicit Core Dependencies
-# The automated setup installs NumPy, Jupyter, Rich, PyTorch for validation, PyYAML, pytest, and jupytext [1, 2].
-# We install these individually based on the components mentioned:
-RUN pip install --no-cache-dir \
-    NumPy \
-    Jupyter \
-    Rich \
-    PyTorch \
-    PyYAML \
+# 3. Upgrade pip and install all core dependencies in one layer
+# Including nbdev and jupytext which are required for the tito workflow
+RUN python -m pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir \
+    numpy \
+    jupyterlab \
+    rich \
+    torch \
+    pyyaml \
     pytest \
-    jupytext
+    jupytext \
+    nbdev \
+    nbgrader
 
-# 4. Install NBGrader (Required for full course/instructor functionality)
-# NBGrader is installed separately in the manual setup [3].
-RUN pip install --no-cache-dir nbgrader
-
-# 5. Configure TinyTorch in Development (Editable) Mode
-# This is crucial for enabling the 'tito' CLI and linking notebooks to the package [1, 2].
+# 4. Install TinyTorch in Development (Editable) Mode
+# This enables the 'tito' command and links the source code
 RUN pip install -e .
 
-# Set the entrypoint to keep the container running
-CMD ["bash"]
+# 5. Optional: Initialize nbgrader if you are using instructor features
+# RUN tito nbgrader init
+
+# Ensure the tito command is in the path and accessible
+ENV PATH="${PATH}:/root/.local/bin"
+
+# The book recommends working from the inner tinytorch directory
+WORKDIR $TITO_ROOT
+
+# Verify installation on startup
+CMD ["bash", "-c", "tito system health && exec bash"]
