@@ -1,0 +1,16 @@
+{
+  "name": "php-tinytorch-app",
+  "version": "1.0.0",
+  "description": "A PHP application with TinyTorch integration",
+  "main": "index.php",
+  "scripts": {
+    "start": "php -S 0.0.0.0:${PORT:-8080} -t .",
+    "start:jupyter": "jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root",
+    "test:python": "pytest tinytorch/tests",
+    "tito": "tito",
+    "health": "tito system health" 
+  },
+  "engines": {
+    "node": ">=20.x"
+  }
+}
